@@ -1,0 +1,17 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <!-- handle -->
+    <path android:pathData="M41,48 C41,31 67,31 67,48"
+        android:strokeColor="#FFFFFF" android:strokeWidth="5" android:strokeLineCap="round" android:fillColor="#00000000"/>
+    <!-- rim -->
+    <path android:fillColor="#FFFFFF" android:pathData="M30,46 L78,46 Q81,46 81,49 L81,51 Q81,54 78,54 L30,54 Q27,54 27,51 L27,49 Q27,46 30,46 Z"/>
+    <!-- basket body -->
+    <path android:fillColor="#FFFFFF" android:pathData="M31,56 L77,56 L72,76 Q71,80 67,80 L41,80 Q37,80 36,76 Z"/>
+    <!-- slats -->
+    <path android:pathData="M45,60 L46,75 M54,60 L54,75 M63,60 L62,75"
+        android:strokeColor="#1E8E4E" android:strokeWidth="3" android:strokeLineCap="round"/>
+    <!-- nudge dot -->
+    <path android:fillColor="#F28C28" android:pathData="M74,30 m-8,0 a8,8 0 1,0 16,0 a8,8 0 1,0 -16,0"/>
+    <path android:fillColor="#FFFFFF" android:pathData="M73,25 L75,25 L75,31 L73,31 Z M73,33 L75,33 L75,35 L73,35 Z"/>
+</vector>

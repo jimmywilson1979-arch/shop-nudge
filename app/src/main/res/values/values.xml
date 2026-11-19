@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Shop Nudge</string>
+    <string name="add_short">Add item</string>
+    <string name="add_long">Add to shopping list</string>
+
+    <color name="green">#1E8E4E</color>
+    <color name="green_dark">#14663A</color>
+    <color name="orange">#F28C28</color>
+    <color name="icon_bg">#1E8E4E</color>
+
+    <style name="Theme.ShopNudge" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/green</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="colorPrimaryContainer">#C8EBD2</item>
+        <item name="colorOnPrimaryContainer">#00210E</item>
+        <item name="colorSecondary">@color/orange</item>
+        <item name="colorSecondaryContainer">#FFE3C7</item>
+        <item name="colorOnSecondaryContainer">#2E1500</item>
+    </style>
+</resources>

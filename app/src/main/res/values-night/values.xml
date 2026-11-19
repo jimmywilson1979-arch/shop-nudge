@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.ShopNudge" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">#6FD98F</item>
+        <item name="colorOnPrimary">#003919</item>
+        <item name="colorPrimaryContainer">#14663A</item>
+        <item name="colorOnPrimaryContainer">#C8EBD2</item>
+        <item name="colorSecondary">#FFB77A</item>
+        <item name="colorSecondaryContainer">#5C3300</item>
+        <item name="colorOnSecondaryContainer">#FFE3C7</item>
+    </style>
+</resources>
