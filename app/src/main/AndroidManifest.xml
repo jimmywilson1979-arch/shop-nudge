@@ -26,6 +26,11 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.ShopNudge">
 
+        <!-- Ask Play Services to fetch the text-reading model at install time -->
+        <meta-data
+            android:name="com.google.mlkit.vision.DEPENDENCIES"
+            android:value="ocr" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
