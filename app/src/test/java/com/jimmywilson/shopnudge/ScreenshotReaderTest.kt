@@ -25,6 +25,18 @@ class ScreenshotReaderTest {
     }
 
     @Test
+    fun titleSplitAcrossChunksIsStitched() {
+        val blocks = listOf(
+            listOf("APPLE &", "BLACKCURRANT"),
+            listOf("Robinsons Mini Apple & Blackcurrant On-"),
+            listOf("The-Go Squash"),
+        )
+        val c = ScreenshotReader.candidates(blocks)
+        println(c)
+        assertEquals("Robinsons Mini Apple & Blackcurrant On-The-Go Squash", c.first())
+    }
+
+    @Test
     fun shopAppJunkIsDropped() {
         val blocks = listOf(
             listOf("20:02"),

@@ -84,6 +84,14 @@ object ScreenshotReader {
             if (lines.size in 2..3) raw += joinLines(lines)   // a title wrapped over a few lines
             else lines.forEach { raw += it }
         }
+        // A title can get split into separate chunks ("...On-" / "The-Go Squash"): stitch them back.
+        val all = blocks.flatten().map { it.trim() }
+        all.forEachIndexed { i, l ->
+            if (l.endsWith("-") && i + 1 < all.size) {
+                raw += joinLines(listOf(l, all[i + 1]))
+                raw.remove(l)
+            }
+        }
         return raw.map { clean(it) }
             .filter { usable(it) }
             .distinctBy { it.lowercase() }

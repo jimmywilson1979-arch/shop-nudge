@@ -264,17 +264,62 @@ class MainActivity : AppCompatActivity() {
             row.findViewById<TextView>(R.id.itemWhere).text = item.whereText()
             val check = row.findViewById<MaterialCheckBox>(R.id.itemCheck)
             check.setOnCheckedChangeListener { _, checked -> if (checked) tickOff(item) }
-            row.setOnClickListener { check.isChecked = true }
+            row.setOnClickListener { editItem(item) }
             itemsBox.addView(row)
         }
     }
 
-    private fun tickOff(item: Item) {
+    /** Tap an item to change its name, shop types or "only at" shop. */
+    private fun editItem(item: Item) {
+        val view = layoutInflater.inflate(R.layout.dialog_edit, null)
+        val text = view.findViewById<TextInputEditText>(R.id.editText)
+        val brand = view.findViewById<TextInputEditText>(R.id.editBrand)
+        val cats = view.findViewById<ChipGroup>(R.id.editCats)
+        text.setText(item.text)
+        brand.setText(item.brand)
+        Category.entries.forEach { c ->
+            val chip = layoutInflater.inflate(R.layout.chip_filter, cats, false) as Chip
+            chip.text = "${c.emoji} ${c.label}"
+            chip.tag = c
+            chip.isChecked = c in item.cats
+            cats.addView(chip)
+        }
+
+        val dialog = MaterialAlertDialogBuilder(this)
+            .setTitle("Edit item")
+            .setView(view)
+            .setPositiveButton("Save", null)
+            .setNegativeButton("Cancel", null)
+            .setNeutralButton("Delete") { _, _ -> tickOff(item, "Deleted") }
+            .create()
+        dialog.setOnShowListener {
+            dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                val newText = text.text?.toString()?.trim().orEmpty()
+                val newBrand = brand.text?.toString()?.trim().orEmpty()
+                val newCats = cats.children.filterIsInstance<Chip>().filter { it.isChecked }.map { it.tag as Category }.toSet()
+                when {
+                    newText.isEmpty() -> text.error = "Can't be blank"
+                    newCats.isEmpty() && newBrand.isEmpty() -> toast("Pick at least one type of shop")
+                    else -> {
+                        Store.addItem(this, item.copy(text = newText, cats = newCats, brand = newBrand))
+                        renderList()
+                        renderStatus()
+                        if (GeofenceManager.hasForeground(this)) RefreshWorker.enqueue(this)
+                        dialog.dismiss()
+                        snack("Saved")
+                    }
+                }
+            }
+        }
+        dialog.show()
+    }
+
+    private fun tickOff(item: Item, verb: String = "Got") {
         Store.removeItems(this, listOf(item.id))
         renderList()
         renderStatus()
         GeofenceManager.registerFromCache(this)
-        Snackbar.make(root, "Got: ${item.text}", Snackbar.LENGTH_LONG)
+        Snackbar.make(root, "$verb: ${item.text}", Snackbar.LENGTH_LONG)
             .setAction("Undo") {
                 Store.addItem(this, item)
                 renderList()
