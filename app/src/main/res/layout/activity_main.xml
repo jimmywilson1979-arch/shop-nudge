@@ -97,6 +97,16 @@
                 android:contentDescription="Say it"
                 android:text="🎤"
                 android:textSize="20sp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/photoBtn"
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="6dp"
+                android:contentDescription="Read a screenshot"
+                android:text="📷"
+                android:textSize="20sp" />
         </LinearLayout>
 
         <TextView

@@ -18,7 +18,9 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.IntentCompat
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
@@ -71,6 +73,9 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+    private val photoLauncher =
+        registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri -> if (uri != null) readScreenshot(uri) }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -104,6 +109,9 @@ class MainActivity : AppCompatActivity() {
 
         findViewById<MaterialButton>(R.id.addBtn).setOnClickListener { addItem() }
         findViewById<MaterialButton>(R.id.micBtn).setOnClickListener { startVoice() }
+        findViewById<MaterialButton>(R.id.photoBtn).setOnClickListener {
+            photoLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+        }
         findViewById<MaterialButton>(R.id.shopsBtn).setOnClickListener { showShops() }
         findViewById<MaterialButton>(R.id.testBtn).setOnClickListener { testAlert() }
         refreshBtn.setOnClickListener {
@@ -125,7 +133,7 @@ class MainActivity : AppCompatActivity() {
             renderStatus()
         }
 
-        handleIntent(intent)
+        if (savedInstanceState == null) handleIntent(intent)
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -146,6 +154,11 @@ class MainActivity : AppCompatActivity() {
     private fun handleIntent(intent: Intent?) {
         when (intent?.action) {
             Intent.ACTION_SEND -> {
+                if (intent.type?.startsWith("image/") == true) {
+                    val uri = IntentCompat.getParcelableExtra(intent, Intent.EXTRA_STREAM, Uri::class.java)
+                    if (uri != null) readScreenshot(uri) else toast("Couldn't open that picture")
+                    return
+                }
                 val raw = intent.getStringExtra(Intent.EXTRA_TEXT) ?: intent.getStringExtra(Intent.EXTRA_SUBJECT)
                 val cleaned = cleanShared(raw)
                 if (cleaned.isNotEmpty()) input.setText(cleaned)
@@ -161,6 +174,29 @@ class MainActivity : AppCompatActivity() {
         val noUrls = raw.replace(Regex("https?://\\S+"), " ")
         val line = noUrls.lines().map { it.trim() }.firstOrNull { it.isNotEmpty() } ?: return ""
         return line.trim(' ', '-', '|', ':', '·').take(80)
+    }
+
+    /** Read a screenshot on the phone and let James tap the product name. */
+    private fun readScreenshot(uri: Uri) {
+        toast("Reading the screenshot…")
+        ScreenshotReader.read(this, uri,
+            onResult = { options ->
+                if (options.isEmpty()) {
+                    toast("Couldn't spot a product name, so type it in")
+                    focusInput()
+                    return@read
+                }
+                MaterialAlertDialogBuilder(this)
+                    .setTitle("Which one is it?")
+                    .setItems(options.toTypedArray()) { _, which ->
+                        input.setText(options[which])
+                        focusInput()
+                    }
+                    .setNegativeButton("I'll type it") { _, _ -> focusInput() }
+                    .show()
+            },
+            onError = { msg -> toast(msg) }
+        )
     }
 
     private fun focusInput() {
