@@ -21,7 +21,7 @@ import com.google.android.gms.location.LocationServices
  * and wakes the app only when you've been inside one for a couple of minutes.
  */
 object GeofenceManager {
-    const val SHOP_RADIUS_M = 120f
+    const val SHOP_RADIUS_M = 150f
     const val AREA_RADIUS_M = 4_000f
     const val LOITER_MS = 120_000
     const val MAX_SHOPS = 95
@@ -64,7 +64,7 @@ object GeofenceManager {
                     .setRequestId("shop:${s.id}")
                     .setCircularRegion(s.lat, s.lon, SHOP_RADIUS_M)
                     .setExpirationDuration(Geofence.NEVER_EXPIRE)
-                    .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_DWELL)
+                    .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER or Geofence.GEOFENCE_TRANSITION_DWELL)
                     .setLoiteringDelay(LOITER_MS)
                     .setNotificationResponsiveness(60_000)
                     .build()
@@ -111,6 +111,13 @@ class GeofenceReceiver : BroadcastReceiver() {
                 val loc = event.triggeringLocation
                 RefreshWorker.enqueue(context, loc?.latitude, loc?.longitude)
             }
+            // Walking past (not driving): nudge straight away so he can pop in.
+            Geofence.GEOFENCE_TRANSITION_ENTER -> if (Movement.isOnFoot(context)) {
+                val loc = event.triggeringLocation
+                ids.filter { it.startsWith("shop:") }
+                    .forEach { Alerts.passingShop(context, it.removePrefix("shop:"), loc?.latitude, loc?.longitude) }
+            }
+            // Been there a couple of minutes (in the shop, or parked up): the backup nudge.
             Geofence.GEOFENCE_TRANSITION_DWELL -> ids.filter { it.startsWith("shop:") }
                 .forEach { Alerts.atShop(context, it.removePrefix("shop:")) }
         }
@@ -121,6 +128,7 @@ class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         // Android wipes geofences on restart / app update — put them back.
         GeofenceManager.registerFromCache(context)
+        Movement.register(context)
         RefreshWorker.enqueue(context)
     }
 }

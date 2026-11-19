@@ -358,6 +358,7 @@ class MainActivity : AppCompatActivity() {
             "Notifications" to notifOk(),
             "Location" to GeofenceManager.hasForeground(this),
             "Location: 'Allow all the time'" to GeofenceManager.hasBackground(this),
+            "Physical activity (walking vs driving)" to Movement.hasPermission(this),
             "Battery: don't let Android put it to sleep" to batteryOk(),
         )
         val missing = steps.filter { !it.second }
@@ -388,6 +389,15 @@ class MainActivity : AppCompatActivity() {
                         .show()
                 }
             }
+            !Movement.hasPermission(this) -> {
+                MaterialAlertDialogBuilder(this)
+                    .setTitle("Walking or driving?")
+                    .setMessage("This lets me nudge you as you walk past a shop, but stay quiet when you drive past one.\n\nOn the next screen, tap Allow.")
+                    .setPositiveButton("OK") { _, _ ->
+                        if (Build.VERSION.SDK_INT >= 29) permLauncher.launch(arrayOf(Manifest.permission.ACTIVITY_RECOGNITION))
+                    }
+                    .show()
+            }
             !batteryOk() -> {
                 try {
                     startActivity(
@@ -406,6 +416,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun onPermsChanged() {
+        Movement.register(this)
         updateSetup()
         renderStatus()
         if (GeofenceManager.hasForeground(this) && Store.items(this).isNotEmpty()) RefreshWorker.enqueue(this)

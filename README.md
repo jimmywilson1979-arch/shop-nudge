@@ -8,7 +8,8 @@ Think of something you need, add it, and get a nudge on your phone (and watch) w
 - Add an item by typing, the 🎤 button, sharing text from another app, or long-pressing the app icon › **Add item**.
 - Pick where you can get it (Supermarket, Corner shop, Chemist, DIY, B&M/pound shop, Pet shop, Petrol), or name one shop (e.g. *Tesco*).
 - The app finds matching shops within 10 km using OpenStreetMap (free, no key) and hands them to Android's built-in geofencing.
-- You get a nudge after about **2 minutes inside** a matching shop, so driving past doesn't count. Each shop nudges you at most once every 3 hours.
+- **Walking past** a matching shop (within ~150 m): instant nudge so you can pop in. **Driving past**: nothing — the phone knows you're in a car.
+- **In the shop** about 2 minutes: backup nudge (covers parking up and walking in). Each shop nudges you at most once every 3 hours.
 - When you move more than 4 km from where it last searched, it looks for shops around your new spot.
 - Tap **Got them all ✓** on the notification to tick items off.
 

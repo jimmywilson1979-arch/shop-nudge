@@ -10,6 +10,8 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
     <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
+    <uses-permission android:name="com.google.android.gms.permission.ACTIVITY_RECOGNITION" />
 
     <queries>
         <intent>
@@ -57,6 +59,9 @@
 
         <receiver
             android:name=".GeofenceReceiver"
+            android:exported="false" />
+        <receiver
+            android:name=".MovementReceiver"
             android:exported="false" />
         <receiver
             android:name=".GotItReceiver"

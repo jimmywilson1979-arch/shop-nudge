@@ -148,6 +148,19 @@ object Store {
     fun lastError(ctx: Context): String? = prefs(ctx).getString("lastError", null)
     fun setError(ctx: Context, msg: String?) = prefs(ctx).edit().putString("lastError", msg).apply()
 
+    // ---- walking / driving (from Movement)
+    fun activity(ctx: Context): Int = prefs(ctx).getInt("activity", -1)
+    fun setActivity(ctx: Context, type: Int) =
+        prefs(ctx).edit().putInt("activity", type).putLong("activityAt", System.currentTimeMillis()).apply()
+
+    fun lastItemNudge(ctx: Context, itemId: Long): Long = prefs(ctx).getLong("walk_$itemId", 0)
+    fun setLastItemNudge(ctx: Context, itemIds: Collection<Long>) {
+        val e = prefs(ctx).edit()
+        val now = System.currentTimeMillis()
+        itemIds.forEach { e.putLong("walk_$it", now) }
+        e.apply()
+    }
+
     // ---- don't nag: one alert per shop every few hours
     fun lastAlert(ctx: Context, shopId: String): Long = prefs(ctx).getLong("alert_$shopId", 0)
     fun setLastAlert(ctx: Context, shopId: String) =

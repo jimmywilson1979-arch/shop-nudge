@@ -36,6 +36,24 @@ object Alerts {
         show(ctx, "🛒 At ${shop.label}? Don't forget…", items, shopId.hashCode())
     }
 
+    private const val WALK_ITEM_COOLDOWN_MS = 45 * 60 * 1000L // don't re-nudge the same item at the next shop along
+
+    fun passingShop(ctx: Context, shopId: String, lat: Double?, lon: Double?) {
+        val shop = Store.shops(ctx).find { it.id == shopId } ?: return
+        val now = System.currentTimeMillis()
+        if (now - Store.lastAlert(ctx, shopId) < COOLDOWN_MS) return
+        val items = Store.items(ctx).filter { it.matches(shop) }
+            .filter { now - Store.lastItemNudge(ctx, it.id) > WALK_ITEM_COOLDOWN_MS }
+        if (items.isEmpty()) return
+        Store.setLastAlert(ctx, shopId)
+        Store.setLastItemNudge(ctx, items.map { it.id })
+        val dist = if (lat != null && lon != null) {
+            val m = shop.distanceTo(lat, lon)
+            if (m < 40) "is right here" else "is ${(m / 10).toInt() * 10} m away"
+        } else "is nearby"
+        show(ctx, "🚶 ${shop.label} $dist. Pop in for…", items, shopId.hashCode())
+    }
+
     @SuppressLint("MissingPermission")
     fun show(ctx: Context, title: String, items: List<Item>, notifId: Int) {
         val nm = NotificationManagerCompat.from(ctx)
@@ -93,5 +111,6 @@ class App : Application() {
         super.onCreate()
         Alerts.ensureChannel(this)
         RefreshWorker.schedulePeriodic(this)
+        Movement.register(this)
     }
 }
