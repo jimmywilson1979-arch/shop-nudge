@@ -63,6 +63,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var refreshBtn: MaterialButton
 
     private var askedBackground = false
+    private var pendingUpdate: Updater.Release? = null
 
     private val permLauncher =
         registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { onPermsChanged() }
@@ -126,6 +127,10 @@ class MainActivity : AppCompatActivity() {
         }
         setupBtn.setOnClickListener { nextSetupStep() }
         findViewById<MaterialButton>(R.id.quietBtn).setOnClickListener { addQuietHere() }
+        findViewById<MaterialButton>(R.id.updateBtn).apply {
+            text = "⬆️ Check for updates  ·  you have v${Updater.installedName(this@MainActivity)}"
+            setOnClickListener { checkForUpdates(manual = true) }
+        }
         input.setOnEditorActionListener { _, id, _ ->
             if (id == EditorInfo.IME_ACTION_DONE) { addItem(); true } else false
         }
@@ -152,6 +157,86 @@ class MainActivity : AppCompatActivity() {
         renderList()
         renderStatus()
         renderQuiet()
+        // Came back from the "allow installs" screen? Carry on with the update.
+        pendingUpdate?.let { rel ->
+            if (Build.VERSION.SDK_INT < 26 || packageManager.canRequestPackageInstalls()) {
+                pendingUpdate = null
+                startUpdate(rel)
+            }
+        }
+        autoCheckForUpdates()
+    }
+
+    // ---------------------------------------------------------------- updates
+
+    private fun autoCheckForUpdates() {
+        val prefs = getSharedPreferences("shopnudge", Context.MODE_PRIVATE)
+        val last = prefs.getLong("updateCheck", 0)
+        if (System.currentTimeMillis() - last < 6 * 60 * 60 * 1000L) return
+        prefs.edit().putLong("updateCheck", System.currentTimeMillis()).apply()
+        checkForUpdates(manual = false)
+    }
+
+    private fun checkForUpdates(manual: Boolean) {
+        if (manual) toast("Checking…")
+        Thread {
+            try {
+                val rel = Updater.latest()
+                val newer = rel.version > Updater.installedVersion(this)
+                runOnUiThread {
+                    if (isFinishing) return@runOnUiThread
+                    when {
+                        newer && manual -> MaterialAlertDialogBuilder(this)
+                            .setTitle("Update ready")
+                            .setMessage("Version ${rel.name} is ready (you have ${Updater.installedName(this)}). Your list and settings are kept.")
+                            .setPositiveButton("Update now") { _, _ -> startUpdate(rel) }
+                            .setNegativeButton("Later", null)
+                            .show()
+                        newer -> Snackbar.make(root, "Update ready (v${rel.name})", Snackbar.LENGTH_INDEFINITE)
+                            .setAction("Update") { startUpdate(rel) }
+                            .show()
+                        manual -> toast("You're on the latest version (v${Updater.installedName(this)})")
+                    }
+                }
+            } catch (e: Exception) {
+                if (manual) runOnUiThread { toast("Couldn't check for updates: ${e.message}") }
+            }
+        }.start()
+    }
+
+    private fun startUpdate(rel: Updater.Release) {
+        if (Build.VERSION.SDK_INT >= 26 && !packageManager.canRequestPackageInstalls()) {
+            MaterialAlertDialogBuilder(this)
+                .setTitle("One-time permission")
+                .setMessage("So Shop Nudge can update itself, switch on \"Allow from this source\" on the next screen, then come back.")
+                .setPositiveButton("OK") { _, _ ->
+                    pendingUpdate = rel
+                    startActivity(Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:$packageName")))
+                }
+                .setNegativeButton("Cancel", null)
+                .show()
+            return
+        }
+        val progress = MaterialAlertDialogBuilder(this)
+            .setTitle("Downloading v${rel.name}")
+            .setMessage("Starting…")
+            .setCancelable(false)
+            .show()
+        Thread {
+            try {
+                val apk = Updater.download(this, rel.apkUrl) { pct ->
+                    runOnUiThread { progress.setMessage("$pct%") }
+                }
+                runOnUiThread { progress.setMessage("Opening installer…") }
+                Updater.install(this, apk)
+                runOnUiThread { progress.dismiss() }
+            } catch (e: Exception) {
+                runOnUiThread {
+                    progress.dismiss()
+                    toast("Update failed: ${e.message}")
+                }
+            }
+        }.start()
     }
 
     // ---------------------------------------------------------------- quiet places

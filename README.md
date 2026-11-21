@@ -4,6 +4,8 @@ Think of something you need, add it, and get a nudge on your phone (and watch) w
 
 **Install (Android):** https://github.com/jimmywilson1979-arch/shop-nudge/releases/latest/download/shop-nudge.apk
 
+After the first install, use **⬆️ Check for updates** at the bottom of the app (it also checks by itself every 6 hours) — no browser needed.
+
 ## How it works
 - Add an item by typing, the 🎤 button, sharing text from another app, or long-pressing the app icon › **Add item**.
 - Pick where you can get it (Supermarket, Corner shop, Chemist, DIY, B&M/pound shop, Pet shop, Petrol), or name one shop (e.g. *Tesco*).
