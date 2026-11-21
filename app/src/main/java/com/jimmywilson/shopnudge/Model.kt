@@ -100,6 +100,16 @@ data class Shop(
     }
 }
 
+/** A place where the app never nudges (home, work…). */
+data class QuietPlace(val name: String, val lat: Double, val lon: Double) {
+    fun contains(lat2: Double, lon2: Double): Boolean {
+        val r = FloatArray(1)
+        Location.distanceBetween(lat, lon, lat2, lon2, r)
+        return r[0] <= RADIUS_M
+    }
+    companion object { const val RADIUS_M = 250f }
+}
+
 /** Simple on-phone storage. Nothing leaves the phone except the shop search. */
 object Store {
     private fun prefs(ctx: Context) = ctx.getSharedPreferences("shopnudge", Context.MODE_PRIVATE)
@@ -147,6 +157,27 @@ object Store {
     // ---- status / errors
     fun lastError(ctx: Context): String? = prefs(ctx).getString("lastError", null)
     fun setError(ctx: Context, msg: String?) = prefs(ctx).edit().putString("lastError", msg).apply()
+
+    // ---- quiet places
+    fun quietPlaces(ctx: Context): List<QuietPlace> {
+        val raw = prefs(ctx).getString("quiet", null) ?: return emptyList()
+        val arr = runCatching { JSONArray(raw) }.getOrNull() ?: return emptyList()
+        return (0 until arr.length()).mapNotNull { i ->
+            runCatching {
+                val o = arr.getJSONObject(i)
+                QuietPlace(o.getString("name"), o.getDouble("lat"), o.getDouble("lon"))
+            }.getOrNull()
+        }
+    }
+
+    fun saveQuietPlaces(ctx: Context, places: List<QuietPlace>) {
+        val arr = JSONArray(places.map { JSONObject().put("name", it.name).put("lat", it.lat).put("lon", it.lon) })
+        prefs(ctx).edit().putString("quiet", arr.toString()).apply()
+    }
+
+    fun addQuietPlace(ctx: Context, p: QuietPlace) = saveQuietPlaces(ctx, quietPlaces(ctx) + p)
+
+    fun isQuiet(ctx: Context, lat: Double, lon: Double): Boolean = quietPlaces(ctx).any { it.contains(lat, lon) }
 
     // ---- walking / driving (from Movement)
     fun activity(ctx: Context): Int = prefs(ctx).getInt("activity", -1)

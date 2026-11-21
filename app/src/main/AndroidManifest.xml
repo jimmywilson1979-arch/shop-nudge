@@ -64,6 +64,9 @@
             android:name=".MovementReceiver"
             android:exported="false" />
         <receiver
+            android:name=".QuietReceiver"
+            android:exported="false" />
+        <receiver
             android:name=".GotItReceiver"
             android:exported="false" />
         <receiver

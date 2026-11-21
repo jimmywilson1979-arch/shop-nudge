@@ -11,7 +11,8 @@ Think of something you need, add it, and get a nudge on your phone (and watch) w
 - **Walking past** a matching shop (within ~150 m): instant nudge so you can pop in. **Driving past**: nothing — the phone knows you're in a car.
 - **In the shop** about 2 minutes: backup nudge (covers parking up and walking in). Each shop nudges you at most once every 3 hours.
 - When you move more than 4 km from where it last searched, it looks for shops around your new spot.
-- Tap **Got them all ✓** on the notification to tick items off.
+- Tap **Got them all ✓** on the notification to tick items off, or **🔕 Quiet here** to never be nudged around that spot.
+- **Quiet places** (home, work…): no nudges within 250 m.
 
 Everything stays on the phone. The only thing sent anywhere is the shop search (an area plus shop types).
 

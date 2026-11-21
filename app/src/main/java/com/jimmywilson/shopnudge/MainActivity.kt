@@ -30,6 +30,9 @@ import androidx.core.view.children
 import androidx.core.view.isVisible
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
+import com.google.android.gms.tasks.CancellationTokenSource
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.checkbox.MaterialCheckBox
 import com.google.android.material.chip.Chip
@@ -122,6 +125,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
         setupBtn.setOnClickListener { nextSetupStep() }
+        findViewById<MaterialButton>(R.id.quietBtn).setOnClickListener { addQuietHere() }
         input.setOnEditorActionListener { _, id, _ ->
             if (id == EditorInfo.IME_ACTION_DONE) { addItem(); true } else false
         }
@@ -147,6 +151,74 @@ class MainActivity : AppCompatActivity() {
         updateSetup()
         renderList()
         renderStatus()
+        renderQuiet()
+    }
+
+    // ---------------------------------------------------------------- quiet places
+
+    private fun renderQuiet() {
+        val box = findViewById<LinearLayout>(R.id.quietBox)
+        box.removeAllViews()
+        val places = Store.quietPlaces(this)
+        if (places.isEmpty()) {
+            box.addView(TextView(this).apply {
+                text = "None yet. Add home so it stops nudging you there."
+                alpha = 0.7f
+                setPadding(0, 8, 0, 8)
+            })
+        }
+        places.forEachIndexed { i, p ->
+            box.addView(TextView(this).apply {
+                text = "📍 ${p.name}"
+                textSize = 16f
+                setPadding(0, 18, 0, 18)
+                setOnClickListener {
+                    MaterialAlertDialogBuilder(this@MainActivity)
+                        .setTitle("Remove ${p.name}?")
+                        .setMessage("You'll get nudges around here again.")
+                        .setPositiveButton("Remove") { _, _ ->
+                            Store.saveQuietPlaces(this@MainActivity, places.filterIndexed { j, _ -> j != i })
+                            renderQuiet()
+                        }
+                        .setNegativeButton("Cancel", null)
+                        .show()
+                }
+            })
+        }
+    }
+
+    @android.annotation.SuppressLint("MissingPermission")
+    private fun addQuietHere() {
+        if (!GeofenceManager.hasForeground(this)) {
+            toast("Tap Set up first so I can see where you are")
+            return
+        }
+        toast("Finding where you are…")
+        LocationServices.getFusedLocationProviderClient(this)
+            .getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, CancellationTokenSource().token)
+            .addOnSuccessListener { loc ->
+                if (loc == null) {
+                    toast("Couldn't get your location. Try again in a moment")
+                    return@addOnSuccessListener
+                }
+                val name = TextInputEditText(this).apply {
+                    setText(if (Store.quietPlaces(this@MainActivity).isEmpty()) "Home" else "Work")
+                    selectAll()
+                }
+                val wrap = LinearLayout(this).apply { setPadding(60, 20, 60, 0); addView(name) }
+                MaterialAlertDialogBuilder(this)
+                    .setTitle("Name this quiet place")
+                    .setView(wrap)
+                    .setPositiveButton("Save") { _, _ ->
+                        val n = name.text?.toString()?.trim().orEmpty().ifEmpty { "Quiet place" }
+                        Store.addQuietPlace(this, QuietPlace(n, loc.latitude, loc.longitude))
+                        renderQuiet()
+                        snack("No more nudges around $n")
+                    }
+                    .setNegativeButton("Cancel", null)
+                    .show()
+            }
+            .addOnFailureListener { toast("Couldn't get your location. Try again in a moment") }
     }
 
     // ---------------------------------------------------------------- adding

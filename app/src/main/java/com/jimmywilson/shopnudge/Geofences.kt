@@ -76,7 +76,7 @@ object GeofenceManager {
                 .build()
 
             val request = GeofencingRequest.Builder()
-                .setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_DWELL)
+                .setInitialTrigger(0)
                 .addGeofences(fences)
                 .build()
             try {
@@ -118,8 +118,11 @@ class GeofenceReceiver : BroadcastReceiver() {
                     .forEach { Alerts.passingShop(context, it.removePrefix("shop:"), loc?.latitude, loc?.longitude) }
             }
             // Been there a couple of minutes (in the shop, or parked up): the backup nudge.
-            Geofence.GEOFENCE_TRANSITION_DWELL -> ids.filter { it.startsWith("shop:") }
-                .forEach { Alerts.atShop(context, it.removePrefix("shop:")) }
+            Geofence.GEOFENCE_TRANSITION_DWELL -> {
+                val loc = event.triggeringLocation
+                ids.filter { it.startsWith("shop:") }
+                    .forEach { Alerts.atShop(context, it.removePrefix("shop:"), loc?.latitude, loc?.longitude) }
+            }
         }
     }
 }
