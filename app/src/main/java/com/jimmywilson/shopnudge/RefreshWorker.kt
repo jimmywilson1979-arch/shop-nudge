@@ -45,7 +45,7 @@ class RefreshWorker(ctx: Context, params: WorkerParameters) : Worker(ctx, params
         }
 
         return try {
-            val shops = ShopFinder.find(items, lat, lon)
+            val shops = ShopFinder.find(ctx, items, lat, lon)
             Store.saveShops(ctx, lat, lon, shops)
             Store.setError(ctx, null)
             GeofenceManager.registerFromCache(ctx)

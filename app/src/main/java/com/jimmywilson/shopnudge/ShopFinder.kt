@@ -37,12 +37,22 @@ object ShopFinder {
         return "[out:json][timeout:25];\n(\n" + lines.joinToString("\n") + "\n);\nout center;"
     }
 
-    fun find(items: List<Item>, lat: Double, lon: Double): List<Shop> {
+    /** Weekly shop map first (fast, reliable); the live Overpass server only as a backup. */
+    fun find(ctx: android.content.Context, items: List<Item>, lat: Double, lon: Double): List<Shop> {
+        val fromMap = TileSource.shopsAround(ctx, lat, lon, RADIUS_M)
+        if (fromMap != null) return fromMap.filter { s -> items.any { it.matches(s) } }
+        return findLive(items, lat, lon)
+    }
+
+    private fun findLive(items: List<Item>, lat: Double, lon: Double): List<Shop> {
         val query = buildQuery(items, lat, lon)
         var last: Exception? = null
         for (ep in endpoints) {
             try {
-                return parse(post(ep, query))
+                val body = post(ep, query)
+                val remark = JSONObject(body).optString("remark")
+                if (remark.contains("error", ignoreCase = true)) throw IOException("busy: $remark".take(80))
+                return parse(body)
             } catch (e: Exception) {
                 last = e
             }
@@ -80,11 +90,13 @@ object ShopFinder {
             conn.doOutput = true
             conn.connectTimeout = 15_000
             conn.readTimeout = 40_000
-            conn.setRequestProperty("User-Agent", "ShopNudge/1.0 (personal shopping reminder app)")
+            conn.setRequestProperty("User-Agent", "ShopNudge/1.1 (+https://github.com/jimmywilson1979-arch/shop-nudge)")
+            conn.setRequestProperty("Referer", "https://github.com/jimmywilson1979-arch/shop-nudge")
+            conn.setRequestProperty("Accept", "*/*")
             conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded")
             conn.outputStream.use { it.write(("data=" + URLEncoder.encode(query, "UTF-8")).toByteArray()) }
             val code = conn.responseCode
-            if (code != 200) throw IOException("Shop server said $code")
+            if (code != 200) throw IOException("live shop server said $code")
             return conn.inputStream.bufferedReader().use { it.readText() }
         } finally {
             conn.disconnect()

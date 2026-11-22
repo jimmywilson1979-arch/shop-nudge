@@ -43,8 +43,15 @@ data class Item(
     val added: Long,
 ) {
     fun matches(shop: Shop): Boolean =
-        if (brand.isNotBlank()) shop.searchText.contains(brand.trim().lowercase())
+        if (brand.isNotBlank()) brandRegex().containsMatchIn(shop.searchText)
         else cats.any { it in shop.cats }
+
+    /** Whole-word match, so "Aldi" doesn't match "Caldicott". "B&M" and "B & M" both work. */
+    private fun brandRegex(): Regex {
+        val words = brand.trim().lowercase().split(Regex("\\s+")).filter { it.isNotEmpty() }
+        val pattern = words.joinToString("\\s*") { w -> w.split("&").joinToString("\\s*&\\s*") { Regex.escape(it) } }
+        return Regex("(^|[^a-z0-9])$pattern($|[^a-z0-9])")
+    }
 
     fun whereText(): String =
         if (brand.isNotBlank()) "📍 Only at ${brand.trim()}"
